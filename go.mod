@@ -1,0 +1,5 @@
+module github.com/rc5091119-pixel/rescuenet
+
+go 1.25.1
+
+require github.com/lib/pq v1.12.3 // indirect
