@@ -1,18 +1,44 @@
 package main
 
 import (
+	"database/sql"
 	"log"
 	"net/http"
+	"os"
+     _ "github.com/lib/pq"
+	"github.com/joho/godotenv"
+	"github.com/rc5091119-pixel/rescuenet/internal/database"
 )
+
+type apiConfig struct {
+	db *database.Queries
+}
 
 func main() {
 	const port = "8080"
-
+	err := godotenv.Load()
+	if err != nil {
+		log.Fatal("Error loading .env file")
+	}
+	dbURL := os.Getenv("DB_URL")
+	if dbURL == "" {
+		log.Fatal("You mush set DBURL")
+	}
+	dbconn, err := sql.Open("postgres", dbURL)
+	if err != nil {
+		log.Fatalf("Error opening database: %s", err)
+	}
+	dbQueries := database.New(dbconn)
 	mux := http.NewServeMux()
+	apiconfig := apiConfig{
+		db: dbQueries,
+	}
 
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("RescueNet API running 🚀"))
 	})
+	mux.HandleFunc("/api/users", apiconfig.handlerCreateUsers)
+	mux.HandleFunc("/api/login",apiconfig.handlerLoginUsers)
 
 	srv := &http.Server{
 		Addr:    ":" + port,
