@@ -12,6 +12,7 @@ import (
 
 type apiConfig struct {
 	db *database.Queries
+	jwtSecret string
 }
 
 func main() {
@@ -29,9 +30,12 @@ func main() {
 		log.Fatalf("Error opening database: %s", err)
 	}
 	dbQueries := database.New(dbconn)
+
+	secretKey := os.Getenv("JWT_SECRET")
 	mux := http.NewServeMux()
 	apiconfig := apiConfig{
 		db: dbQueries,
+		jwtSecret: secretKey,
 	}
 
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
