@@ -5,13 +5,14 @@ import (
 	"log"
 	"net/http"
 	"os"
-     _ "github.com/lib/pq"
+
 	"github.com/joho/godotenv"
+	_ "github.com/lib/pq"
 	"github.com/rc5091119-pixel/rescuenet/internal/database"
 )
 
 type apiConfig struct {
-	db *database.Queries
+	db        *database.Queries
 	jwtSecret string
 }
 
@@ -34,7 +35,7 @@ func main() {
 	secretKey := os.Getenv("JWT_SECRET")
 	mux := http.NewServeMux()
 	apiconfig := apiConfig{
-		db: dbQueries,
+		db:        dbQueries,
 		jwtSecret: secretKey,
 	}
 
@@ -42,8 +43,9 @@ func main() {
 		w.Write([]byte("RescueNet API running 🚀"))
 	})
 	mux.HandleFunc("/api/users", apiconfig.handlerCreateUsers)
-	mux.HandleFunc("/api/login",apiconfig.handlerLoginUsers)
-
+	mux.HandleFunc("/api/login", apiconfig.handlerLoginUsers)
+	mux.Handle("/api/test",
+    apiconfig.AuthMiddleware(http.HandlerFunc(apiconfig.handlerTestProtected)))
 	srv := &http.Server{
 		Addr:    ":" + port,
 		Handler: mux,

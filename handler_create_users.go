@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/google/uuid"
@@ -40,15 +41,15 @@ func (cfg *apiConfig) handlerCreateUsers(w http.ResponseWriter, r *http.Request)
 	}
 
 	UuId := uuid.New()
-	hashedPassword,err := auth.HashPassword(params.Password)
+	hashedPassword, err := auth.HashPassword(params.Password)
 	if err != nil {
-		respondWithError(w,http.StatusBadRequest,"could not hash password",err)
-		return 
+		respondWithError(w, http.StatusBadRequest, "could not hash password", err)
+		return
 	}
-
+	email := strings.TrimSpace(params.Email)
 	user, err := cfg.db.CreateUser(r.Context(), database.CreateUserParams{
 		ID:           UuId,
-		Email:        params.Email,
+		Email:        email,
 		PasswordHash: hashedPassword,
 	})
 
