@@ -10,9 +10,25 @@ import (
 	"github.com/google/uuid"
 )
 
+type Alert struct {
+	ID        uuid.UUID
+	UserID    uuid.NullUUID
+	Latitude  float64
+	Longitude float64
+	Status    string
+	CreatedAt time.Time
+}
+
 type User struct {
 	ID           uuid.UUID
 	Email        string
 	PasswordHash string
 	CreatedAt    time.Time
+}
+
+type UserLocation struct {
+	UserID    uuid.UUID
+	Latitude  float64
+	Longitude float64
+	UpdatedAt time.Time
 }

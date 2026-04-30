@@ -222,3 +222,7 @@ Week 5 → Optimization + README
 # 🔥 One-Line Summary
 
 Build authentication → store user location → trigger alert → find nearby users → send real-time notifications → allow one user to accept → resolve alert → optimize and polish.
+
+
+
+goose -dir sql/schema postgres "postgres://rescuer:password123@localhost:5432/rescuenet?sslmode=disable" up
