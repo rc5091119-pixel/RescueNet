@@ -11,16 +11,35 @@ import (
 	"github.com/google/uuid"
 )
 
-const getUserLocations = `-- name: GetUserLocations :many
+const getUserLocationByUserID = `-- name: GetUserLocationByUserID :one
 SELECT user_id,latitude,longitude
 FROM user_locations
-WHERE latitude BETWEEN $1 - 0.01 AND $1 + 0.01
-AND longitude BETWEEN $2 - 0.01 AND $2 + 0.01
+WHERE user_id = $1
+`
+
+type GetUserLocationByUserIDRow struct {
+	UserID    uuid.UUID
+	Latitude  float64
+	Longitude float64
+}
+
+func (q *Queries) GetUserLocationByUserID(ctx context.Context, userID uuid.UUID) (GetUserLocationByUserIDRow, error) {
+	row := q.db.QueryRowContext(ctx, getUserLocationByUserID, userID)
+	var i GetUserLocationByUserIDRow
+	err := row.Scan(&i.UserID, &i.Latitude, &i.Longitude)
+	return i, err
+}
+
+const getUserLocations = `-- name: GetUserLocations :many
+SELECT user_id, latitude, longitude
+FROM user_locations
+WHERE latitude BETWEEN $1::float8 - 0.01 AND $1::float8 + 0.01
+AND longitude BETWEEN $2::float8 - 0.01 AND $2::float8 + 0.01
 `
 
 type GetUserLocationsParams struct {
-	Column1 interface{}
-	Column2 interface{}
+	Lat float64
+	Lng float64
 }
 
 type GetUserLocationsRow struct {
@@ -30,7 +49,7 @@ type GetUserLocationsRow struct {
 }
 
 func (q *Queries) GetUserLocations(ctx context.Context, arg GetUserLocationsParams) ([]GetUserLocationsRow, error) {
-	rows, err := q.db.QueryContext(ctx, getUserLocations, arg.Column1, arg.Column2)
+	rows, err := q.db.QueryContext(ctx, getUserLocations, arg.Lat, arg.Lng)
 	if err != nil {
 		return nil, err
 	}

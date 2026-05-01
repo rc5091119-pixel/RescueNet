@@ -5,6 +5,7 @@
 package database
 
 import (
+	"database/sql"
 	"time"
 
 	"github.com/google/uuid"
@@ -12,11 +13,18 @@ import (
 
 type Alert struct {
 	ID        uuid.UUID
-	UserID    uuid.NullUUID
+	UserID    uuid.UUID
 	Latitude  float64
 	Longitude float64
 	Status    string
 	CreatedAt time.Time
+}
+
+type AlertResponse struct {
+	AlertID     uuid.UUID
+	UserID      uuid.UUID
+	Status      string
+	RespondedAt sql.NullTime
 }
 
 type User struct {
