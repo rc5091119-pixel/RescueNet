@@ -48,6 +48,7 @@ func main() {
     apiconfig.AuthMiddleware(http.HandlerFunc(apiconfig.handlerTestProtected)))
 	mux.Handle("/api/location",apiconfig.AuthMiddleware(http.HandlerFunc(apiconfig.handlerUpdateLocation),),)
 	mux.Handle("/api/alerts",apiconfig.AuthMiddleware(http.HandlerFunc(apiconfig.handlerCreateAlerts),),)
+	mux.Handle("/api/alerts/{id}/accept",apiconfig.AuthMiddleware(http.HandlerFunc(apiconfig.handlerAcceptAlert),),)
 	srv := &http.Server{
 		Addr:    ":" + port,
 		Handler: mux,

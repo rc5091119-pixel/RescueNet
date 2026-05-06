@@ -226,3 +226,5 @@ Build authentication → store user location → trigger alert → find nearby u
 
 
 goose -dir sql/schema postgres "postgres://rescuer:password123@localhost:5432/rescuenet?sslmode=disable" up
+
+psql "postgres://rescuer:password123@localhost:5432/rescuenet?sslmode=disable"
