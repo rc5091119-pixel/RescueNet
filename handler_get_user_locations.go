@@ -52,6 +52,16 @@ func (cfg *apiConfig) handlerCreateAlerts(w http.ResponseWriter, r *http.Request
 			nearbyUsers = append(nearbyUsers, u)
 		}
 	}
+	for _, user := range nearbyUsers {
+		err := cfg.db.CreateAlertNotification(r.Context(), database.CreateAlertNotificationParams{
+			AlertID: alert.ID,
+			UserID:  user.UserID,
+		})
+		if err != nil {
+			respondWithError(w,http.StatusInternalServerError,"Failed to save alert Notifications",err)
+			return
+		}
+	}
 	respondWithJSON(w, http.StatusOK, map[string]interface{}{
 		"alert_id":     alert.ID,
 		"nearby_users": nearbyUsers,

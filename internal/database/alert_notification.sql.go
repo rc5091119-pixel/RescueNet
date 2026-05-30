@@ -26,3 +26,23 @@ func (q *Queries) CreateAlertNotification(ctx context.Context, arg CreateAlertNo
 	_, err := q.db.ExecContext(ctx, createAlertNotification, arg.AlertID, arg.UserID)
 	return err
 }
+
+const getPendingAlertsForUser = `-- name: GetPendingAlertsForUser :one
+SELECT id, alert_id, user_id, status, created_at
+FROM alert_notifications
+WHERE user_id = $1
+AND status = 'pending'
+`
+
+func (q *Queries) GetPendingAlertsForUser(ctx context.Context, userID uuid.UUID) (AlertNotification, error) {
+	row := q.db.QueryRowContext(ctx, getPendingAlertsForUser, userID)
+	var i AlertNotification
+	err := row.Scan(
+		&i.ID,
+		&i.AlertID,
+		&i.UserID,
+		&i.Status,
+		&i.CreatedAt,
+	)
+	return i, err
+}

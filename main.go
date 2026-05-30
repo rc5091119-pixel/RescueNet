@@ -48,6 +48,8 @@ func main() {
 	mux.Handle("/api/location",apiconfig.AuthMiddleware(http.HandlerFunc(apiconfig.handlerUpdateLocation),),)
 	mux.Handle("/api/alerts",apiconfig.AuthMiddleware(http.HandlerFunc(apiconfig.handlerCreateAlerts),),)
 	mux.Handle("/api/alerts/{id}/accept",apiconfig.AuthMiddleware(http.HandlerFunc(apiconfig.handlerAcceptAlert),),)
+	//mux.Handle("/api/rooms/{roomID}/messages",apiconfig.AuthMiddleware(http.HandlerFunc(apiconfig.handlerCreateMessage),),)
+
 	// mux.Handle("/ws",apiconfig.AuthMiddleware(http.HandlerFunc(apiconfig.handlerWebsocket),),)
 	srv := &http.Server{
 		Addr:    ":" + port,

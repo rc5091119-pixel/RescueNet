@@ -13,7 +13,6 @@ import (
 
 const createMessage = `-- name: CreateMessage :exec
 INSERT INTO messages (
-    id,
     room_id,
     sender_id,
     content
@@ -21,25 +20,18 @@ INSERT INTO messages (
 VALUES (
     $1,
     $2,
-    $3,
-    $4
+    $3
 )
 `
 
 type CreateMessageParams struct {
-	ID       uuid.UUID
 	RoomID   uuid.UUID
 	SenderID uuid.UUID
 	Content  string
 }
 
 func (q *Queries) CreateMessage(ctx context.Context, arg CreateMessageParams) error {
-	_, err := q.db.ExecContext(ctx, createMessage,
-		arg.ID,
-		arg.RoomID,
-		arg.SenderID,
-		arg.Content,
-	)
+	_, err := q.db.ExecContext(ctx, createMessage, arg.RoomID, arg.SenderID, arg.Content)
 	return err
 }
 
