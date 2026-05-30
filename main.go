@@ -44,11 +44,11 @@ func main() {
 	})
 	mux.HandleFunc("/api/users", apiconfig.handlerCreateUsers)
 	mux.HandleFunc("/api/login", apiconfig.handlerLoginUsers)
-	mux.Handle("/api/test",
-    apiconfig.AuthMiddleware(http.HandlerFunc(apiconfig.handlerTestProtected)))
+	mux.Handle("/api/test", apiconfig.AuthMiddleware(http.HandlerFunc(apiconfig.handlerTestProtected)))
 	mux.Handle("/api/location",apiconfig.AuthMiddleware(http.HandlerFunc(apiconfig.handlerUpdateLocation),),)
 	mux.Handle("/api/alerts",apiconfig.AuthMiddleware(http.HandlerFunc(apiconfig.handlerCreateAlerts),),)
 	mux.Handle("/api/alerts/{id}/accept",apiconfig.AuthMiddleware(http.HandlerFunc(apiconfig.handlerAcceptAlert),),)
+	// mux.Handle("/ws",apiconfig.AuthMiddleware(http.HandlerFunc(apiconfig.handlerWebsocket),),)
 	srv := &http.Server{
 		Addr:    ":" + port,
 		Handler: mux,

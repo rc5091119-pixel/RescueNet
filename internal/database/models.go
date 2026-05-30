@@ -20,11 +20,38 @@ type Alert struct {
 	CreatedAt time.Time
 }
 
+type AlertNotification struct {
+	ID        uuid.UUID
+	AlertID   uuid.UUID
+	UserID    uuid.UUID
+	Status    string
+	CreatedAt time.Time
+}
+
 type AlertResponse struct {
 	AlertID     uuid.UUID
 	UserID      uuid.UUID
 	Status      string
 	RespondedAt sql.NullTime
+}
+
+type Message struct {
+	ID        uuid.UUID
+	RoomID    uuid.UUID
+	SenderID  uuid.UUID
+	Content   string
+	CreatedAt time.Time
+}
+
+type Room struct {
+	ID        uuid.UUID
+	AlertID   uuid.UUID
+	CreatedAt time.Time
+}
+
+type RoomMember struct {
+	RoomID uuid.UUID
+	UserID uuid.UUID
 }
 
 type User struct {
