@@ -17,13 +17,6 @@ FROM messages
 WHERE room_id = $1
 ORDER BY created_at ASC;
 
--- name: GetRecentRoomMessages :many
-SELECT *
-FROM messages
-WHERE room_id = $1
-ORDER BY created_at DESC
-LIMIT 50;
-
 -- name: IsRoomMember :one
 SELECT EXISTS(
     SELECT 1

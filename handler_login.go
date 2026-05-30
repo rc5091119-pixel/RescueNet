@@ -24,6 +24,10 @@ func (cfg *apiConfig) handlerLoginUsers(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 	user, err := cfg.db.GetUserByEmail(r.Context(), params.Email)
+	if err != nil {
+		respondWithError(w,http.StatusUnauthorized,"Invalid email or password",nil)
+		return
+	}
 
 	match, err := auth.CheckPasswordHash(params.Password, user.PasswordHash)
 	if err != nil || !match {

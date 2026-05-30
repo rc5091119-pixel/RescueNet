@@ -11,7 +11,7 @@ import (
 	"github.com/google/uuid"
 )
 
-const createMessage = `-- name: CreateMessage :exec
+const createMessage = `-- name: CreateMessage :one
 INSERT INTO messages (
     room_id,
     sender_id,
@@ -22,6 +22,7 @@ VALUES (
     $2,
     $3
 )
+RETURNING id, room_id, sender_id, content, created_at
 `
 
 type CreateMessageParams struct {
@@ -30,46 +31,17 @@ type CreateMessageParams struct {
 	Content  string
 }
 
-func (q *Queries) CreateMessage(ctx context.Context, arg CreateMessageParams) error {
-	_, err := q.db.ExecContext(ctx, createMessage, arg.RoomID, arg.SenderID, arg.Content)
-	return err
-}
-
-const getRecentRoomMessages = `-- name: GetRecentRoomMessages :many
-SELECT id, room_id, sender_id, content, created_at
-FROM messages
-WHERE room_id = $1
-ORDER BY created_at DESC
-LIMIT 50
-`
-
-func (q *Queries) GetRecentRoomMessages(ctx context.Context, roomID uuid.UUID) ([]Message, error) {
-	rows, err := q.db.QueryContext(ctx, getRecentRoomMessages, roomID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []Message
-	for rows.Next() {
-		var i Message
-		if err := rows.Scan(
-			&i.ID,
-			&i.RoomID,
-			&i.SenderID,
-			&i.Content,
-			&i.CreatedAt,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
+func (q *Queries) CreateMessage(ctx context.Context, arg CreateMessageParams) (Message, error) {
+	row := q.db.QueryRowContext(ctx, createMessage, arg.RoomID, arg.SenderID, arg.Content)
+	var i Message
+	err := row.Scan(
+		&i.ID,
+		&i.RoomID,
+		&i.SenderID,
+		&i.Content,
+		&i.CreatedAt,
+	)
+	return i, err
 }
 
 const getRoomMessages = `-- name: GetRoomMessages :many
@@ -106,4 +78,25 @@ func (q *Queries) GetRoomMessages(ctx context.Context, roomID uuid.UUID) ([]Mess
 		return nil, err
 	}
 	return items, nil
+}
+
+const isRoomMember = `-- name: IsRoomMember :one
+SELECT EXISTS(
+    SELECT 1
+    FROM room_members
+    WHERE room_id = $1
+    AND user_id = $2
+)
+`
+
+type IsRoomMemberParams struct {
+	RoomID uuid.UUID
+	UserID uuid.UUID
+}
+
+func (q *Queries) IsRoomMember(ctx context.Context, arg IsRoomMemberParams) (bool, error) {
+	row := q.db.QueryRowContext(ctx, isRoomMember, arg.RoomID, arg.UserID)
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
 }
