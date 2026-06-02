@@ -2,10 +2,13 @@ package main
 
 import (
 	"context"
+	"errors"
 	"net/http"
 	"strings"
 
+	"github.com/google/uuid"
 	"github.com/rc5091119-pixel/rescuenet/internal/auth"
+	"github.com/rc5091119-pixel/rescuenet/internal/database"
 )
 
 type contextKey string
@@ -32,4 +35,20 @@ func (cfg *apiConfig) AuthMiddleware(next http.Handler) http.Handler {
 		ctx := context.WithValue(r.Context(), userIDKey, userID)
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
+}
+
+func (cfg *apiConfig) VerifyRoomMember(ctx context.Context, roomID uuid.UUID, userID uuid.UUID) error {
+	isMember, err := cfg.db.IsRoomMember(ctx, database.IsRoomMemberParams{
+		RoomID: roomID,
+		UserID: userID,
+	})
+	if err != nil {
+		return err
+	}
+
+	if !isMember {
+		return errors.New("user is not a room member")
+	}
+
+	return nil
 }

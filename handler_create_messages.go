@@ -28,20 +28,14 @@ func (cfg *apiConfig) handlerCreateMessage(w http.ResponseWriter, r *http.Reques
 		return
 	}
 
-	isMember, err := cfg.db.IsRoomMember(r.Context(), database.IsRoomMemberParams{
-		RoomID: roomID,
-		UserID: uid,
-	})
-
+	err = cfg.VerifyRoomMember(r.Context(), roomID, uid)
 	if err != nil {
-		respondWithError(w, http.StatusInternalServerError,
-			"Failed to verify room membership", err)
-		return
-	}
-
-	if !isMember {
-		respondWithError(w, http.StatusForbidden,
-			"You are not a member of this room", nil)
+		respondWithError(
+			w,
+			http.StatusForbidden,
+			"You are not a member of this room",
+			nil,
+		)
 		return
 	}
 	err = json.NewDecoder(r.Body).Decode(&params)

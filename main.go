@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 
+	"github.com/google/uuid"
 	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 	"github.com/rc5091119-pixel/rescuenet/internal/database"
@@ -14,6 +15,7 @@ import (
 type apiConfig struct {
 	db        *database.Queries
 	jwtSecret string
+	hub       *Hub
 }
 
 func main() {
@@ -33,10 +35,16 @@ func main() {
 	dbQueries := database.New(dbconn)
 
 	secretKey := os.Getenv("JWT_SECRET")
+
+	hub := &Hub{
+		Rooms: make(map[uuid.UUID]map[*Client]bool),
+	}
+
 	mux := http.NewServeMux()
 	apiconfig := apiConfig{
 		db:        dbQueries,
 		jwtSecret: secretKey,
+		hub:       hub,
 	}
 
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -45,13 +53,13 @@ func main() {
 	mux.HandleFunc("/api/users", apiconfig.handlerCreateUsers)
 	mux.HandleFunc("/api/login", apiconfig.handlerLoginUsers)
 	mux.Handle("/api/test", apiconfig.AuthMiddleware(http.HandlerFunc(apiconfig.handlerTestProtected)))
-	mux.Handle("/api/location",apiconfig.AuthMiddleware(http.HandlerFunc(apiconfig.handlerUpdateLocation),),)
-	mux.Handle("/api/alerts",apiconfig.AuthMiddleware(http.HandlerFunc(apiconfig.handlerCreateAlerts),),)
-	mux.Handle("/api/alerts/{id}/accept",apiconfig.AuthMiddleware(http.HandlerFunc(apiconfig.handlerAcceptAlert),),)
-	mux.Handle("POST /api/rooms/{roomID}/messages",apiconfig.AuthMiddleware(http.HandlerFunc(apiconfig.handlerCreateMessage),),)
-	mux.Handle("GET /api/rooms/{roomID}/messages",apiconfig.AuthMiddleware(http.HandlerFunc(apiconfig.handlerGetMessage),),)
+	mux.Handle("/api/location", apiconfig.AuthMiddleware(http.HandlerFunc(apiconfig.handlerUpdateLocation)))
+	mux.Handle("/api/alerts", apiconfig.AuthMiddleware(http.HandlerFunc(apiconfig.handlerCreateAlerts)))
+	mux.Handle("/api/alerts/{id}/accept", apiconfig.AuthMiddleware(http.HandlerFunc(apiconfig.handlerAcceptAlert)))
+	mux.Handle("POST /api/rooms/{roomID}/messages", apiconfig.AuthMiddleware(http.HandlerFunc(apiconfig.handlerCreateMessage)))
+	mux.Handle("GET /api/rooms/{roomID}/messages", apiconfig.AuthMiddleware(http.HandlerFunc(apiconfig.handlerGetMessage)))
 
-	// mux.Handle("/ws",apiconfig.AuthMiddleware(http.HandlerFunc(apiconfig.handlerWebsocket),),)
+	mux.HandleFunc("GET /ws/rooms/{roomID}", apiconfig.handlerWebsocket)
 	srv := &http.Server{
 		Addr:    ":" + port,
 		Handler: mux,

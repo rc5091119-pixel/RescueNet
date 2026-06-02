@@ -4,7 +4,6 @@ import (
 	"net/http"
 
 	"github.com/google/uuid"
-	"github.com/rc5091119-pixel/rescuenet/internal/database"
 )
 
 func (cfg *apiConfig) handlerGetMessage(w http.ResponseWriter, r *http.Request) {
@@ -22,22 +21,17 @@ func (cfg *apiConfig) handlerGetMessage(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 
-	isMember, err := cfg.db.IsRoomMember(r.Context(), database.IsRoomMemberParams{
-		RoomID: roomID,
-		UserID: uid,
-	})
-
+	err = cfg.VerifyRoomMember(r.Context(), roomID, uid)
 	if err != nil {
-		respondWithError(w, http.StatusInternalServerError,
-			"Failed to verify room membership", err)
+		respondWithError(
+			w,
+			http.StatusForbidden,
+			"You are not a member of this room",
+			nil,
+		)
 		return
 	}
 
-	if !isMember {
-		respondWithError(w, http.StatusForbidden,
-			"You are not a member of this room", nil)
-		return
-	}
 	messages, err := cfg.db.GetRoomMessages(r.Context(), roomID)
 	if err != nil {
 		respondWithError(w,
