@@ -61,7 +61,7 @@ func main() {
 	)
 
 	mux.Handle(
-		"/api/location",
+		"POST /api/location",
 		apiconfig.AuthMiddleware(http.HandlerFunc(apiconfig.handlerUpdateLocation)),
 	)
 
