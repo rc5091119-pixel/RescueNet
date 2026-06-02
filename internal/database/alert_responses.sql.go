@@ -67,3 +67,24 @@ func (q *Queries) GetAcceptedUsers(ctx context.Context, alertID uuid.UUID) ([]uu
 	}
 	return items, nil
 }
+
+const hasUserAcceptedAlert = `-- name: HasUserAcceptedAlert :one
+SELECT EXISTS(
+    SELECT 1
+    FROM alert_responses
+    WHERE alert_id = $1
+    AND user_id = $2
+)
+`
+
+type HasUserAcceptedAlertParams struct {
+	AlertID uuid.UUID
+	UserID  uuid.UUID
+}
+
+func (q *Queries) HasUserAcceptedAlert(ctx context.Context, arg HasUserAcceptedAlertParams) (bool, error) {
+	row := q.db.QueryRowContext(ctx, hasUserAcceptedAlert, arg.AlertID, arg.UserID)
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
+}

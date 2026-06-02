@@ -20,6 +20,33 @@ func (cfg *apiConfig) handlerAcceptAlert(w http.ResponseWriter, r *http.Request)
 		respondWithError(w, http.StatusBadRequest, "Invalid alert", err)
 		return
 	}
+	alreadyAccepted, err := cfg.db.HasUserAcceptedAlert(
+		r.Context(),
+		database.HasUserAcceptedAlertParams{
+			AlertID: alertID,
+			UserID:  uid,
+		},
+	)
+
+	if err != nil {
+		respondWithError(
+			w,
+			http.StatusInternalServerError,
+			"Couldn't check acceptance",
+			err,
+		)
+		return
+	}
+
+	if alreadyAccepted {
+		respondWithError(
+			w,
+			http.StatusConflict,
+			"You have already accepted this alert",
+			nil,
+		)
+		return
+	}
 
 	count, err := cfg.db.CountAcceptedUsers(r.Context(), alertID)
 	if err != nil {

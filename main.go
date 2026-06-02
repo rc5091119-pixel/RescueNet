@@ -47,19 +47,48 @@ func main() {
 		hub:       hub,
 	}
 
-	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+	mux.HandleFunc("GET /", func(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("RescueNet API running 🚀"))
 	})
-	mux.HandleFunc("/api/users", apiconfig.handlerCreateUsers)
-	mux.HandleFunc("/api/login", apiconfig.handlerLoginUsers)
-	mux.Handle("/api/test", apiconfig.AuthMiddleware(http.HandlerFunc(apiconfig.handlerTestProtected)))
-	mux.Handle("/api/location", apiconfig.AuthMiddleware(http.HandlerFunc(apiconfig.handlerUpdateLocation)))
-	mux.Handle("/api/alerts", apiconfig.AuthMiddleware(http.HandlerFunc(apiconfig.handlerCreateAlerts)))
-	mux.Handle("/api/alerts/{id}/accept", apiconfig.AuthMiddleware(http.HandlerFunc(apiconfig.handlerAcceptAlert)))
-	mux.Handle("POST /api/rooms/{roomID}/messages", apiconfig.AuthMiddleware(http.HandlerFunc(apiconfig.handlerCreateMessage)))
-	mux.Handle("GET /api/rooms/{roomID}/messages", apiconfig.AuthMiddleware(http.HandlerFunc(apiconfig.handlerGetMessage)))
 
-	mux.HandleFunc("GET /ws/rooms/{roomID}", apiconfig.handlerWebsocket)
+	mux.HandleFunc("POST /api/users", apiconfig.handlerCreateUsers)
+
+	mux.HandleFunc("POST /api/login", apiconfig.handlerLoginUsers)
+
+	mux.Handle(
+		"GET /api/test",
+		apiconfig.AuthMiddleware(http.HandlerFunc(apiconfig.handlerTestProtected)),
+	)
+
+	mux.Handle(
+		"/api/location",
+		apiconfig.AuthMiddleware(http.HandlerFunc(apiconfig.handlerUpdateLocation)),
+	)
+
+	mux.Handle(
+		"POST /api/alerts",
+		apiconfig.AuthMiddleware(http.HandlerFunc(apiconfig.handlerCreateAlerts)),
+	)
+
+	mux.Handle(
+		"POST /api/alerts/{id}/accept",
+		apiconfig.AuthMiddleware(http.HandlerFunc(apiconfig.handlerAcceptAlert)),
+	)
+
+	mux.Handle(
+		"POST /api/rooms/{roomID}/messages",
+		apiconfig.AuthMiddleware(http.HandlerFunc(apiconfig.handlerCreateMessage)),
+	)
+
+	mux.Handle(
+		"GET /api/rooms/{roomID}/messages",
+		apiconfig.AuthMiddleware(http.HandlerFunc(apiconfig.handlerGetMessage)),
+	)
+
+	mux.HandleFunc(
+		"GET /ws/rooms/{roomID}",
+		apiconfig.handlerWebsocket,
+	)
 	srv := &http.Server{
 		Addr:    ":" + port,
 		Handler: mux,

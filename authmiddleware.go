@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"errors"
+	"log"
 	"net/http"
 	"strings"
 
@@ -36,12 +37,20 @@ func (cfg *apiConfig) AuthMiddleware(next http.Handler) http.Handler {
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
-
 func (cfg *apiConfig) VerifyRoomMember(ctx context.Context, roomID uuid.UUID, userID uuid.UUID) error {
 	isMember, err := cfg.db.IsRoomMember(ctx, database.IsRoomMemberParams{
 		RoomID: roomID,
 		UserID: userID,
 	})
+
+	log.Printf(
+		"VerifyRoomMember room=%s user=%s isMember=%v err=%v",
+		roomID,
+		userID,
+		isMember,
+		err,
+	)
+
 	if err != nil {
 		return err
 	}

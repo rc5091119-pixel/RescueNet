@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"encoding/json"
 	"log"
 	"net/http"
@@ -13,7 +14,6 @@ import (
 
 func (cfg *apiConfig) handlerWebsocket(w http.ResponseWriter, r *http.Request) {
 	token := r.URL.Query().Get("token")
-	log.Println("Token:", token)
 
 	userID, err := auth.ValidateJWT(
 		token,
@@ -36,6 +36,7 @@ func (cfg *apiConfig) handlerWebsocket(w http.ResponseWriter, r *http.Request) {
 		respondWithError(w, http.StatusBadRequest, "Invalid RoomId", err)
 		return
 	}
+	ctx := context.TODO()
 	err = cfg.VerifyRoomMember(r.Context(), roomID, userID)
 	if err != nil {
 		respondWithError(
@@ -63,26 +64,34 @@ func (cfg *apiConfig) handlerWebsocket(w http.ResponseWriter, r *http.Request) {
 		UserID: userID,
 		RoomID: roomID,
 	}
+
+	cfg.hub.mu.Lock()
 	if cfg.hub.Rooms[roomID] == nil {
 		cfg.hub.Rooms[roomID] = make(map[*Client]bool)
 	}
+
 	cfg.hub.Rooms[roomID][client] = true
-	log.Println("WebSocket connected")
+	cfg.hub.mu.Unlock()
 
 	defer func() {
+		cfg.hub.mu.Lock()
 		delete(cfg.hub.Rooms[roomID], client)
+		if len(cfg.hub.Rooms[roomID]) == 0 {
+			delete(cfg.hub.Rooms, roomID)
+		}
 
 		log.Printf(
 			"User %s disconnected from room %s",
 			userID,
 			roomID,
 		)
-
+		cfg.hub.mu.Unlock()
 		conn.Close()
 	}()
 	for {
 		_, data, err := conn.ReadMessage()
 		if err != nil {
+			log.Printf("Read error: %v", err)
 			break
 		}
 
@@ -94,9 +103,8 @@ func (cfg *apiConfig) handlerWebsocket(w http.ResponseWriter, r *http.Request) {
 			userID,
 			content,
 		)
-
 		msg, err := cfg.db.CreateMessage(
-			r.Context(),
+			ctx,
 			database.CreateMessageParams{
 				RoomID:   roomID,
 				SenderID: userID,
@@ -119,12 +127,17 @@ func (cfg *apiConfig) handlerWebsocket(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 
+		cfg.hub.mu.RLock()
+		count := len(cfg.hub.Rooms[roomID])
+		cfg.hub.mu.RUnlock()
+
 		log.Printf(
 			"Broadcasting message %s to %d clients",
 			msg.ID,
-			len(cfg.hub.Rooms[roomID]),
+			count,
 		)
 
+		cfg.hub.mu.RLock()
 		for c := range cfg.hub.Rooms[roomID] {
 			if c == client {
 				continue
@@ -139,5 +152,6 @@ func (cfg *apiConfig) handlerWebsocket(w http.ResponseWriter, r *http.Request) {
 				log.Println(err)
 			}
 		}
+		cfg.hub.mu.RUnlock()
 	}
 }

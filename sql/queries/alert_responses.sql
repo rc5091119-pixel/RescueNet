@@ -11,3 +11,11 @@ WHERE alert_id = $1 AND status = 'accepted';
 SELECT user_id
 FROM alert_responses
 WHERE alert_id = $1 AND status = 'accepted';
+
+-- name: HasUserAcceptedAlert :one
+SELECT EXISTS(
+    SELECT 1
+    FROM alert_responses
+    WHERE alert_id = $1
+    AND user_id = $2
+);
