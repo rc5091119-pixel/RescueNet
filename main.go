@@ -91,7 +91,7 @@ func main() {
 	)
 	srv := &http.Server{
 		Addr:    ":" + port,
-		Handler: mux,
+		Handler: corsMiddleware(mux),
 	}
 
 	log.Printf("Serving on port: %s\n", port)
