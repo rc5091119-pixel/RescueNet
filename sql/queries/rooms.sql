@@ -10,3 +10,8 @@ VALUES($1, $2);
 SELECT user_id
 FROM room_members
 WHERE room_id = $1;
+
+-- name: GetUserRooms :many
+SELECT room_id
+FROM room_members
+WHERE user_id = $1;

@@ -81,7 +81,12 @@ func main() {
 		"POST /api/alerts/{id}/accept",
 		apiconfig.AuthMiddleware(http.HandlerFunc(apiconfig.handlerAcceptAlert)),
 	)
-
+	mux.Handle(
+		"GET /api/my-rooms",
+		apiconfig.AuthMiddleware(
+			http.HandlerFunc(apiconfig.handlerGetUserRooms),
+		),
+	)
 	mux.Handle(
 		"POST /api/rooms/{roomID}/messages",
 		apiconfig.AuthMiddleware(http.HandlerFunc(apiconfig.handlerCreateMessage)),
