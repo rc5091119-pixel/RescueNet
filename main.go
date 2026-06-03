@@ -71,6 +71,13 @@ func main() {
 	)
 
 	mux.Handle(
+		"GET /api/notifications",
+		apiconfig.AuthMiddleware(
+			http.HandlerFunc(apiconfig.handlerGetNotifications),
+		),
+	)
+
+	mux.Handle(
 		"POST /api/alerts/{id}/accept",
 		apiconfig.AuthMiddleware(http.HandlerFunc(apiconfig.handlerAcceptAlert)),
 	)

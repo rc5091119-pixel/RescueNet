@@ -67,11 +67,23 @@ func (cfg *apiConfig) handlerAcceptAlert(w http.ResponseWriter, r *http.Request)
 		respondWithError(w, 500, "Failed to accept alert", err)
 		return
 	}
+	err = cfg.db.MarkNotificationAccepted(
+		r.Context(),
+		database.MarkNotificationAcceptedParams{
+			AlertID: alertID,
+			UserID:  uid,
+		},
+	)
+	if err != nil {
+		respondWithError(w, 500, "Failed to update notification", err)
+		return
+	}
 	count, err = cfg.db.CountAcceptedUsers(r.Context(), alertID)
 	if err != nil {
 		respondWithError(w, 500, "Failed to count users", err)
 		return
 	}
+	var roomID uuid.UUID
 	if count == 3 {
 		roomID := uuid.New()
 		err = cfg.db.CreateRoom(r.Context(), database.CreateRoomParams{
@@ -98,7 +110,9 @@ func (cfg *apiConfig) handlerAcceptAlert(w http.ResponseWriter, r *http.Request)
 			}
 		}
 	}
-	respondWithJSON(w, 200, map[string]string{
-		"message": "Accepted successfully",
+	respondWithJSON(w, 200, map[string]any{
+		"message":      "Accepted successfully",
+		"room_created": count == 3,
+		"room_id":      roomID,
 	})
 }

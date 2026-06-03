@@ -27,22 +27,55 @@ func (q *Queries) CreateAlertNotification(ctx context.Context, arg CreateAlertNo
 	return err
 }
 
-const getPendingAlertsForUser = `-- name: GetPendingAlertsForUser :one
+const getPendingAlertsForUser = `-- name: GetPendingAlertsForUser :many
 SELECT id, alert_id, user_id, status, created_at
 FROM alert_notifications
 WHERE user_id = $1
 AND status = 'pending'
 `
 
-func (q *Queries) GetPendingAlertsForUser(ctx context.Context, userID uuid.UUID) (AlertNotification, error) {
-	row := q.db.QueryRowContext(ctx, getPendingAlertsForUser, userID)
-	var i AlertNotification
-	err := row.Scan(
-		&i.ID,
-		&i.AlertID,
-		&i.UserID,
-		&i.Status,
-		&i.CreatedAt,
-	)
-	return i, err
+func (q *Queries) GetPendingAlertsForUser(ctx context.Context, userID uuid.UUID) ([]AlertNotification, error) {
+	rows, err := q.db.QueryContext(ctx, getPendingAlertsForUser, userID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []AlertNotification
+	for rows.Next() {
+		var i AlertNotification
+		if err := rows.Scan(
+			&i.ID,
+			&i.AlertID,
+			&i.UserID,
+			&i.Status,
+			&i.CreatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const markNotificationAccepted = `-- name: MarkNotificationAccepted :exec
+UPDATE alert_notifications
+SET status = 'accepted'
+WHERE alert_id = $1
+AND user_id = $2
+`
+
+type MarkNotificationAcceptedParams struct {
+	AlertID uuid.UUID
+	UserID  uuid.UUID
+}
+
+func (q *Queries) MarkNotificationAccepted(ctx context.Context, arg MarkNotificationAcceptedParams) error {
+	_, err := q.db.ExecContext(ctx, markNotificationAccepted, arg.AlertID, arg.UserID)
+	return err
 }

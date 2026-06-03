@@ -41,7 +41,7 @@ func (cfg *apiConfig) handlerCreateAlerts(w http.ResponseWriter, r *http.Request
 		Lng: userLoc.Longitude,
 	})
 
-	var nearbyUsers []database.GetUserLocationsRow
+	nearbyUsers := []database.GetUserLocationsRow{}
 
 	for _, u := range users {
 		if u.UserID == uid {
@@ -58,7 +58,7 @@ func (cfg *apiConfig) handlerCreateAlerts(w http.ResponseWriter, r *http.Request
 			UserID:  user.UserID,
 		})
 		if err != nil {
-			respondWithError(w,http.StatusInternalServerError,"Failed to save alert Notifications",err)
+			respondWithError(w, http.StatusInternalServerError, "Failed to save alert Notifications", err)
 			return
 		}
 	}
