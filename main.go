@@ -87,6 +87,12 @@ func main() {
 			http.HandlerFunc(apiconfig.handlerGetUserRooms),
 		),
 	)
+
+	mux.HandleFunc(
+		"GET /api/rooms/{roomID}/info",
+		apiconfig.handlerGetRoomInfo,
+	) 
+
 	mux.Handle(
 		"POST /api/rooms/{roomID}/messages",
 		apiconfig.AuthMiddleware(http.HandlerFunc(apiconfig.handlerCreateMessage)),

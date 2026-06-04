@@ -7,6 +7,8 @@ package database
 
 import (
 	"context"
+	"database/sql"
+	"time"
 
 	"github.com/google/uuid"
 )
@@ -45,25 +47,43 @@ func (q *Queries) CreateMessage(ctx context.Context, arg CreateMessageParams) (M
 }
 
 const getRoomMessages = `-- name: GetRoomMessages :many
-SELECT id, room_id, sender_id, content, created_at
-FROM messages
-WHERE room_id = $1
-ORDER BY created_at ASC
+SELECT
+    m.id,
+    m.room_id,
+    m.sender_id,
+    u.name AS sender_name,
+    m.content,
+    m.created_at
+FROM messages m
+JOIN users u
+    ON m.sender_id = u.id
+WHERE m.room_id = $1
+ORDER BY m.created_at ASC
 `
 
-func (q *Queries) GetRoomMessages(ctx context.Context, roomID uuid.UUID) ([]Message, error) {
+type GetRoomMessagesRow struct {
+	ID         uuid.UUID
+	RoomID     uuid.UUID
+	SenderID   uuid.UUID
+	SenderName sql.NullString
+	Content    string
+	CreatedAt  time.Time
+}
+
+func (q *Queries) GetRoomMessages(ctx context.Context, roomID uuid.UUID) ([]GetRoomMessagesRow, error) {
 	rows, err := q.db.QueryContext(ctx, getRoomMessages, roomID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Message
+	var items []GetRoomMessagesRow
 	for rows.Next() {
-		var i Message
+		var i GetRoomMessagesRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.RoomID,
 			&i.SenderID,
+			&i.SenderName,
 			&i.Content,
 			&i.CreatedAt,
 		); err != nil {

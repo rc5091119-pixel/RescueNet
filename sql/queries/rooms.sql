@@ -15,3 +15,17 @@ WHERE room_id = $1;
 SELECT room_id
 FROM room_members
 WHERE user_id = $1;
+
+-- name: GetRoomInfo :one
+SELECT
+    r.id,
+    r.alert_id,
+    u.name AS creator_name,
+    a.latitude,
+    a.longitude
+FROM rooms r
+JOIN alerts a
+    ON r.alert_id = a.id
+JOIN users u
+    ON a.user_id = u.id
+WHERE r.id = $1;

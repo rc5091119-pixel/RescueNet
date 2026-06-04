@@ -7,6 +7,7 @@ package database
 
 import (
 	"context"
+	"database/sql"
 
 	"github.com/google/uuid"
 )
@@ -28,27 +29,44 @@ func (q *Queries) CreateAlertNotification(ctx context.Context, arg CreateAlertNo
 }
 
 const getPendingAlertsForUser = `-- name: GetPendingAlertsForUser :many
-SELECT id, alert_id, user_id, status, created_at
-FROM alert_notifications
-WHERE user_id = $1
-AND status = 'pending'
+SELECT
+    an.id,
+    an.alert_id,
+    an.status,
+    an.user_id,
+    u.name AS creator_name
+FROM alert_notifications an
+JOIN alerts a
+    ON an.alert_id = a.id
+JOIN users u
+    ON a.user_id = u.id
+WHERE an.user_id = $1
+AND an.status = 'pending'
 `
 
-func (q *Queries) GetPendingAlertsForUser(ctx context.Context, userID uuid.UUID) ([]AlertNotification, error) {
+type GetPendingAlertsForUserRow struct {
+	ID          uuid.UUID
+	AlertID     uuid.UUID
+	Status      string
+	UserID      uuid.UUID
+	CreatorName sql.NullString
+}
+
+func (q *Queries) GetPendingAlertsForUser(ctx context.Context, userID uuid.UUID) ([]GetPendingAlertsForUserRow, error) {
 	rows, err := q.db.QueryContext(ctx, getPendingAlertsForUser, userID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []AlertNotification
+	var items []GetPendingAlertsForUserRow
 	for rows.Next() {
-		var i AlertNotification
+		var i GetPendingAlertsForUserRow
 		if err := rows.Scan(
 			&i.ID,
 			&i.AlertID,
-			&i.UserID,
 			&i.Status,
-			&i.CreatedAt,
+			&i.UserID,
+			&i.CreatorName,
 		); err != nil {
 			return nil, err
 		}

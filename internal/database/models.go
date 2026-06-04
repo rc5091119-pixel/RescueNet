@@ -59,6 +59,7 @@ type User struct {
 	Email        string
 	PasswordHash string
 	CreatedAt    time.Time
+	Name         sql.NullString
 }
 
 type UserLocation struct {

@@ -1,8 +1,8 @@
 -- name: CreateUser :one
 INSERT INTO users(
-    id,email,password_hash,created_at
+    id,name,email,password_hash,created_at
 )VALUES(
-    $1,$2,$3,NOW()
+    $1,$2,$3,$4,NOW()
 ) 
 RETURNING *;
 

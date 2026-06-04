@@ -7,39 +7,47 @@ package database
 
 import (
 	"context"
+	"database/sql"
 
 	"github.com/google/uuid"
 )
 
 const createUser = `-- name: CreateUser :one
 INSERT INTO users(
-    id,email,password_hash,created_at
+    id,name,email,password_hash,created_at
 )VALUES(
-    $1,$2,$3,NOW()
+    $1,$2,$3,$4,NOW()
 ) 
-RETURNING id, email, password_hash, created_at
+RETURNING id, email, password_hash, created_at, name
 `
 
 type CreateUserParams struct {
 	ID           uuid.UUID
+	Name         sql.NullString
 	Email        string
 	PasswordHash string
 }
 
 func (q *Queries) CreateUser(ctx context.Context, arg CreateUserParams) (User, error) {
-	row := q.db.QueryRowContext(ctx, createUser, arg.ID, arg.Email, arg.PasswordHash)
+	row := q.db.QueryRowContext(ctx, createUser,
+		arg.ID,
+		arg.Name,
+		arg.Email,
+		arg.PasswordHash,
+	)
 	var i User
 	err := row.Scan(
 		&i.ID,
 		&i.Email,
 		&i.PasswordHash,
 		&i.CreatedAt,
+		&i.Name,
 	)
 	return i, err
 }
 
 const getUserByEmail = `-- name: GetUserByEmail :one
-SELECT id, email, password_hash, created_at FROM users
+SELECT id, email, password_hash, created_at, name FROM users
 WHERE email = $1
 `
 
@@ -51,6 +59,7 @@ func (q *Queries) GetUserByEmail(ctx context.Context, email string) (User, error
 		&i.Email,
 		&i.PasswordHash,
 		&i.CreatedAt,
+		&i.Name,
 	)
 	return i, err
 }

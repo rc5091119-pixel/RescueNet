@@ -7,6 +7,7 @@ package database
 
 import (
 	"context"
+	"database/sql"
 
 	"github.com/google/uuid"
 )
@@ -39,6 +40,42 @@ type CreateRoomParams struct {
 func (q *Queries) CreateRoom(ctx context.Context, arg CreateRoomParams) error {
 	_, err := q.db.ExecContext(ctx, createRoom, arg.ID, arg.AlertID)
 	return err
+}
+
+const getRoomInfo = `-- name: GetRoomInfo :one
+SELECT
+    r.id,
+    r.alert_id,
+    u.name AS creator_name,
+    a.latitude,
+    a.longitude
+FROM rooms r
+JOIN alerts a
+    ON r.alert_id = a.id
+JOIN users u
+    ON a.user_id = u.id
+WHERE r.id = $1
+`
+
+type GetRoomInfoRow struct {
+	ID          uuid.UUID
+	AlertID     uuid.UUID
+	CreatorName sql.NullString
+	Latitude    float64
+	Longitude   float64
+}
+
+func (q *Queries) GetRoomInfo(ctx context.Context, id uuid.UUID) (GetRoomInfoRow, error) {
+	row := q.db.QueryRowContext(ctx, getRoomInfo, id)
+	var i GetRoomInfoRow
+	err := row.Scan(
+		&i.ID,
+		&i.AlertID,
+		&i.CreatorName,
+		&i.Latitude,
+		&i.Longitude,
+	)
+	return i, err
 }
 
 const getRoomMembers = `-- name: GetRoomMembers :many

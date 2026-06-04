@@ -43,6 +43,7 @@ func (cfg *apiConfig) handlerLoginUsers(w http.ResponseWriter, r *http.Request) 
 	respondWithJSON(w, 201, response{
 		User: User{
 			Id:        user.ID,
+			Name: user.Name.String,
 			Email:     user.Email,
 			CreatedAt: user.CreatedAt,
 		},

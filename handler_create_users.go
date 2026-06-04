@@ -1,6 +1,7 @@
 package main
 
 import (
+	"database/sql"
 	"encoding/json"
 	"net/http"
 	"strings"
@@ -13,6 +14,7 @@ import (
 
 type User struct {
 	Id        uuid.UUID `json:"id"`
+	Name      string    `json:"name"`
 	Email     string    `json:"email"`
 	Password  string    `json:"-"`
 	CreatedAt time.Time `json:"created_at"`
@@ -20,6 +22,7 @@ type User struct {
 
 func (cfg *apiConfig) handlerCreateUsers(w http.ResponseWriter, r *http.Request) {
 	type parameters struct {
+		Name     string `json:"name"`
 		Email    string `json:"email"`
 		Password string `json:"password"`
 	}
@@ -48,7 +51,11 @@ func (cfg *apiConfig) handlerCreateUsers(w http.ResponseWriter, r *http.Request)
 	}
 	email := strings.TrimSpace(params.Email)
 	user, err := cfg.db.CreateUser(r.Context(), database.CreateUserParams{
-		ID:           UuId,
+		ID: UuId,
+		Name: sql.NullString{
+			String: params.Name,
+			Valid:  true,
+		},
 		Email:        email,
 		PasswordHash: hashedPassword,
 	})
@@ -61,6 +68,7 @@ func (cfg *apiConfig) handlerCreateUsers(w http.ResponseWriter, r *http.Request)
 	respondWithJSON(w, 201, response{
 		User: User{
 			Id:        user.ID,
+			Name:      user.Name.String,
 			Email:     user.Email,
 			CreatedAt: user.CreatedAt,
 		},

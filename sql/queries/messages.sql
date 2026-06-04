@@ -12,10 +12,18 @@ VALUES (
 RETURNING *;
 
 -- name: GetRoomMessages :many
-SELECT *
-FROM messages
-WHERE room_id = $1
-ORDER BY created_at ASC;
+SELECT
+    m.id,
+    m.room_id,
+    m.sender_id,
+    u.name AS sender_name,
+    m.content,
+    m.created_at
+FROM messages m
+JOIN users u
+    ON m.sender_id = u.id
+WHERE m.room_id = $1
+ORDER BY m.created_at ASC;
 
 -- name: IsRoomMember :one
 SELECT EXISTS(
