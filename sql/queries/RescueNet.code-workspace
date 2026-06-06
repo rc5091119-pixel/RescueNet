@@ -1,0 +1,14 @@
+{
+	"folders": [
+		{
+			"path": "../.."
+		},
+		{
+			"path": "../../../Team3-BugTicket-Module"
+		},
+		{
+			"path": "../../../learn-file-storage-s3-golang-starter"
+		}
+	],
+	"settings": {}
+}

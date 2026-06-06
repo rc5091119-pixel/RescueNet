@@ -108,24 +108,46 @@ func (q *Queries) GetRoomMembers(ctx context.Context, roomID uuid.UUID) ([]uuid.
 }
 
 const getUserRooms = `-- name: GetUserRooms :many
-SELECT room_id
-FROM room_members
-WHERE user_id = $1
+SELECT
+    r.id AS room_id,
+    u.name AS creator_name,
+    a.latitude,
+    a.longitude
+FROM room_members rm
+JOIN rooms r
+    ON rm.room_id = r.id
+JOIN alerts a
+    ON r.alert_id = a.id
+JOIN users u
+    ON a.user_id = u.id
+WHERE rm.user_id = $1
 `
 
-func (q *Queries) GetUserRooms(ctx context.Context, userID uuid.UUID) ([]uuid.UUID, error) {
+type GetUserRoomsRow struct {
+	RoomID      uuid.UUID
+	CreatorName sql.NullString
+	Latitude    float64
+	Longitude   float64
+}
+
+func (q *Queries) GetUserRooms(ctx context.Context, userID uuid.UUID) ([]GetUserRoomsRow, error) {
 	rows, err := q.db.QueryContext(ctx, getUserRooms, userID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []uuid.UUID
+	var items []GetUserRoomsRow
 	for rows.Next() {
-		var room_id uuid.UUID
-		if err := rows.Scan(&room_id); err != nil {
+		var i GetUserRoomsRow
+		if err := rows.Scan(
+			&i.RoomID,
+			&i.CreatorName,
+			&i.Latitude,
+			&i.Longitude,
+		); err != nil {
 			return nil, err
 		}
-		items = append(items, room_id)
+		items = append(items, i)
 	}
 	if err := rows.Close(); err != nil {
 		return nil, err

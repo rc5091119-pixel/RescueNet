@@ -102,6 +102,10 @@ func main() {
 		"GET /api/rooms/{roomID}/messages",
 		apiconfig.AuthMiddleware(http.HandlerFunc(apiconfig.handlerGetMessage)),
 	)
+	mux.Handle(
+		"GET /api/rooms/{roomID}/locations",
+		apiconfig.AuthMiddleware(http.HandlerFunc(apiconfig.handlerGetRoomMemberLocations)),
+	)
 
 	mux.HandleFunc(
 		"GET /ws/rooms/{roomID}",

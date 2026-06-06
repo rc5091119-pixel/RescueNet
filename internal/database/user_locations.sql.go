@@ -7,9 +7,62 @@ package database
 
 import (
 	"context"
+	"database/sql"
 
 	"github.com/google/uuid"
 )
+
+const getRoomMemberLocations = `-- name: GetRoomMemberLocations :many
+SELECT
+    u.id,
+    u.name,
+    ul.latitude,
+    ul.longitude,
+    ul.updated_at
+FROM room_members rm
+JOIN users u
+    ON rm.user_id = u.id
+LEFT JOIN user_locations ul
+    ON ul.user_id = u.id
+WHERE rm.room_id = $1
+`
+
+type GetRoomMemberLocationsRow struct {
+	ID        uuid.UUID
+	Name      sql.NullString
+	Latitude  sql.NullFloat64
+	Longitude sql.NullFloat64
+	UpdatedAt sql.NullTime
+}
+
+func (q *Queries) GetRoomMemberLocations(ctx context.Context, roomID uuid.UUID) ([]GetRoomMemberLocationsRow, error) {
+	rows, err := q.db.QueryContext(ctx, getRoomMemberLocations, roomID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetRoomMemberLocationsRow
+	for rows.Next() {
+		var i GetRoomMemberLocationsRow
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Latitude,
+			&i.Longitude,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
 
 const getUserLocationByUserID = `-- name: GetUserLocationByUserID :one
 SELECT user_id,latitude,longitude

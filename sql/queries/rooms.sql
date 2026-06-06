@@ -12,9 +12,19 @@ FROM room_members
 WHERE room_id = $1;
 
 -- name: GetUserRooms :many
-SELECT room_id
-FROM room_members
-WHERE user_id = $1;
+SELECT
+    r.id AS room_id,
+    u.name AS creator_name,
+    a.latitude,
+    a.longitude
+FROM room_members rm
+JOIN rooms r
+    ON rm.room_id = r.id
+JOIN alerts a
+    ON r.alert_id = a.id
+JOIN users u
+    ON a.user_id = u.id
+WHERE rm.user_id = $1;
 
 -- name: GetRoomInfo :one
 SELECT

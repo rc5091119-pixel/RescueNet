@@ -50,6 +50,17 @@ func (cfg *apiConfig) handlerCreateUsers(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	email := strings.TrimSpace(params.Email)
+	_, err = cfg.db.GetUserByEmail(r.Context(), params.Email)
+
+	if err == nil {
+		respondWithError(
+			w,
+			http.StatusConflict,
+			"Email already registered",
+			nil,
+		)
+		return
+	}
 	user, err := cfg.db.CreateUser(r.Context(), database.CreateUserParams{
 		ID: UuId,
 		Name: sql.NullString{
