@@ -46,6 +46,43 @@ func (q *Queries) CreateMessage(ctx context.Context, arg CreateMessageParams) (M
 	return i, err
 }
 
+const getMessageByID = `-- name: GetMessageByID :one
+SELECT
+    m.id,
+    m.room_id,
+    m.sender_id,
+    u.name AS sender_name,
+    m.content,
+    m.created_at
+FROM messages m
+JOIN users u
+    ON m.sender_id = u.id
+WHERE m.id = $1
+`
+
+type GetMessageByIDRow struct {
+	ID         uuid.UUID
+	RoomID     uuid.UUID
+	SenderID   uuid.UUID
+	SenderName sql.NullString
+	Content    string
+	CreatedAt  time.Time
+}
+
+func (q *Queries) GetMessageByID(ctx context.Context, id uuid.UUID) (GetMessageByIDRow, error) {
+	row := q.db.QueryRowContext(ctx, getMessageByID, id)
+	var i GetMessageByIDRow
+	err := row.Scan(
+		&i.ID,
+		&i.RoomID,
+		&i.SenderID,
+		&i.SenderName,
+		&i.Content,
+		&i.CreatedAt,
+	)
+	return i, err
+}
+
 const getRoomMessages = `-- name: GetRoomMessages :many
 SELECT
     m.id,

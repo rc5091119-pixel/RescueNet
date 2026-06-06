@@ -88,6 +88,13 @@ func (cfg *apiConfig) handlerWebsocket(w http.ResponseWriter, r *http.Request) {
 		cfg.hub.mu.Unlock()
 		conn.Close()
 	}()
+	type WSMessage struct {
+		Type      string  `json:"type"`
+		Content   string  `json:"content,omitempty"`
+		Latitude  float64 `json:"latitude,omitempty"`
+		Longitude float64 `json:"longitude,omitempty"`
+	}
+
 	for {
 		_, data, err := conn.ReadMessage()
 		if err != nil {
@@ -95,63 +102,98 @@ func (cfg *apiConfig) handlerWebsocket(w http.ResponseWriter, r *http.Request) {
 			break
 		}
 
-		content := string(data)
+		var incoming WSMessage
 
-		log.Printf(
-			"Saving message. Room=%s User=%s Content=%s",
-			roomID,
-			userID,
-			content,
-		)
-		msg, err := cfg.db.CreateMessage(
-			ctx,
-			database.CreateMessageParams{
-				RoomID:   roomID,
-				SenderID: userID,
-				Content:  content,
-			},
-		)
-
-		if err != nil {
-			log.Printf("DB Error : %v", err)
-			continue
-		}
-		log.Printf(
-			"Saved message %s",
-			msg.ID,
-		)
-
-		payload, err := json.Marshal(msg)
+		err = json.Unmarshal(data, &incoming)
 		if err != nil {
 			log.Println(err)
 			continue
 		}
 
-		cfg.hub.mu.RLock()
-		count := len(cfg.hub.Rooms[roomID])
-		cfg.hub.mu.RUnlock()
+		switch incoming.Type {
 
-		log.Printf(
-			"Broadcasting message %s to %d clients",
-			msg.ID,
-			count,
-		)
+		case "chat":
 
-		cfg.hub.mu.RLock()
-		for c := range cfg.hub.Rooms[roomID] {
-			if c == client {
+			msg, err := cfg.db.CreateMessage(
+				ctx,
+				database.CreateMessageParams{
+					RoomID:   roomID,
+					SenderID: userID,
+					Content:  incoming.Content,
+				},
+			)
+
+			if err != nil {
+				log.Printf("DB Error : %v", err)
 				continue
 			}
 
-			err := c.Conn.WriteMessage(
-				websocket.TextMessage,
-				payload,
+			log.Printf(
+				"Saved message %s",
+				msg.ID,
+			)
+			fullMsg, err := cfg.db.GetMessageByID(
+				ctx,
+				msg.ID,
 			)
 
 			if err != nil {
 				log.Println(err)
+				continue
 			}
+
+			payload, err := json.Marshal(fullMsg)
+			if err != nil {
+				log.Println(err)
+				continue
+			}
+
+			cfg.hub.mu.RLock()
+
+			for c := range cfg.hub.Rooms[roomID] {
+
+				if c == client {
+					continue
+				}
+
+				err := c.Conn.WriteMessage(
+					websocket.TextMessage,
+					payload,
+				)
+
+				if err != nil {
+					log.Println(err)
+				}
+			}
+			cfg.hub.mu.RUnlock()
+
+		case "location":
+
+			payload, err := json.Marshal(incoming)
+			if err != nil {
+				continue
+			}
+
+			cfg.hub.mu.RLock()
+
+			for c := range cfg.hub.Rooms[roomID] {
+
+				if c == client {
+					continue
+				}
+
+				err := c.Conn.WriteMessage(
+					websocket.TextMessage,
+					payload,
+				)
+
+				if err != nil {
+					log.Println(err)
+				}
+			}
+
+			cfg.hub.mu.RUnlock()
+
 		}
-		cfg.hub.mu.RUnlock()
 	}
 }

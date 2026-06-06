@@ -32,3 +32,16 @@ SELECT EXISTS(
     WHERE room_id = $1
     AND user_id = $2
 );
+
+-- name: GetMessageByID :one
+SELECT
+    m.id,
+    m.room_id,
+    m.sender_id,
+    u.name AS sender_name,
+    m.content,
+    m.created_at
+FROM messages m
+JOIN users u
+    ON m.sender_id = u.id
+WHERE m.id = $1;
