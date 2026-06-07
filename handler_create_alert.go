@@ -40,6 +40,13 @@ func (cfg *apiConfig) handlerCreateAlerts(w http.ResponseWriter, r *http.Request
 		Lat: userLoc.Latitude,
 		Lng: userLoc.Longitude,
 	})
+	if err != nil {
+		respondWithError(w, http.StatusInternalServerError, "Failed to fetch nearby users", err)
+	}
+	if userLoc.Latitude == 0 || userLoc.Longitude == 0 {
+		respondWithError(w, http.StatusBadRequest, "Invalid location", nil)
+		return
+	}
 
 	nearbyUsers := []database.GetUserLocationsRow{}
 
