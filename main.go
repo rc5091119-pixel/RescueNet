@@ -19,10 +19,9 @@ type apiConfig struct {
 }
 
 func main() {
-	const port = "8080"
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("Error loading .env file")
+
+	if err := godotenv.Load(); err != nil {
+		log.Println("No .env file found, using environment variables")
 	}
 	dbURL := os.Getenv("DB_URL")
 	if dbURL == "" {
@@ -35,6 +34,10 @@ func main() {
 	dbQueries := database.New(dbconn)
 
 	secretKey := os.Getenv("JWT_SECRET")
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
 
 	hub := &Hub{
 		Rooms: make(map[uuid.UUID]map[*Client]bool),
