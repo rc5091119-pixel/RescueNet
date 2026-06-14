@@ -25,7 +25,7 @@ func (cfg *apiConfig) handlerLoginUsers(w http.ResponseWriter, r *http.Request) 
 	}
 	user, err := cfg.db.GetUserByEmail(r.Context(), params.Email)
 	if err != nil {
-		respondWithError(w,http.StatusUnauthorized,"Invalid email or password",nil)
+		respondWithError(w, http.StatusUnauthorized, "Invalid email or password", nil)
 		return
 	}
 
@@ -43,7 +43,7 @@ func (cfg *apiConfig) handlerLoginUsers(w http.ResponseWriter, r *http.Request) 
 	respondWithJSON(w, 201, response{
 		User: User{
 			Id:        user.ID,
-			Name: user.Name.String,
+			Name:      user.Name.String,
 			Email:     user.Email,
 			CreatedAt: user.CreatedAt,
 		},
