@@ -11,6 +11,7 @@ type Client struct {
 	Conn   *websocket.Conn
 	UserID uuid.UUID
 	RoomID uuid.UUID
+	mu     sync.Mutex
 }
 
 type Hub struct {

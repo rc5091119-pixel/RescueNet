@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"strings"
 
 	"github.com/google/uuid"
 	"github.com/gorilla/websocket"
@@ -110,9 +111,19 @@ func (cfg *apiConfig) handlerWebsocket(w http.ResponseWriter, r *http.Request) {
 			continue
 		}
 
+		log.Printf(
+			"Chat received | room=%s user=%s content=%s",
+			roomID,
+			userID,
+			incoming.Content,
+		)
+
 		switch incoming.Type {
 
 		case "chat":
+			if strings.TrimSpace(incoming.Content) == "" {
+				continue
+			}
 
 			msg, err := cfg.db.CreateMessage(
 				ctx,
@@ -152,17 +163,21 @@ func (cfg *apiConfig) handlerWebsocket(w http.ResponseWriter, r *http.Request) {
 
 			for c := range cfg.hub.Rooms[roomID] {
 
-				if c == client {
-					continue
-				}
+				log.Printf(
+					"Broadcasting to user %s",
+					c.UserID,
+				)
 
-				err := c.Conn.WriteMessage(
+				err := c.SafeWrite(
 					websocket.TextMessage,
 					payload,
 				)
 
 				if err != nil {
-					log.Println(err)
+					log.Printf(
+						"Write Error: %v",
+						err,
+					)
 				}
 			}
 			cfg.hub.mu.RUnlock()
@@ -182,13 +197,17 @@ func (cfg *apiConfig) handlerWebsocket(w http.ResponseWriter, r *http.Request) {
 					continue
 				}
 
-				err := c.Conn.WriteMessage(
+				err := c.SafeWrite(
 					websocket.TextMessage,
 					payload,
 				)
 
 				if err != nil {
-					log.Println(err)
+					log.Printf(
+						"Location Write Error user=%s err=%v",
+						c.UserID,
+						err,
+					)
 				}
 			}
 
