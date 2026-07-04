@@ -278,4 +278,5 @@ B.Tech — Electronics and Communication Engineering
 National Institute of Technology Agartala | GPA: 8.72
 
 - Email: rc5091119@gmail.com
+
 - GitHub: [github.com/rc5091119-pixel](https://github.com/rc5091119-pixel)
