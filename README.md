@@ -170,13 +170,67 @@ CREATE TABLE messages (
 
 ## Getting started
 
-### Prerequisites
+You can run RescueNet either with **Docker** (recommended — no local Go/Postgres setup needed) or **manually** with a local Go and PostgreSQL install.
+
+### Option 1: Run with Docker (recommended)
+
+#### Prerequisites
+
+- [Docker](https://docs.docker.com/get-docker/) and [Docker Compose](https://docs.docker.com/compose/install/)
+
+#### Setup
+
+```bash
+# 1. Clone
+git clone https://github.com/rc5091119-pixel/RescueNet.git
+cd RescueNet
+
+# 2. Configure environment
+cp temp.env .env
+# Edit .env — set DB_URL, JWT_SECRET, ALLOWED_ORIGIN
+# Note: if Postgres also runs in Docker, DB_URL should point to the
+# Postgres *service name* (e.g. db) instead of localhost, e.g.:
+# DB_URL=postgres://user:password@db:5432/rescuenet?sslmode=disable
+
+# 3. Build and start all containers (backend, frontend, and DB if included)
+docker compose up --build
+```
+
+This starts:
+
+| Service | Port | URL |
+|---|---|---|
+| Backend (Go API + WebSocket) | `8080` | http://localhost:8080 |
+| Frontend | `3000` | http://localhost:3000 |
+
+Stop everything with `Ctrl+C`, or run it in the background with:
+
+```bash
+docker compose up -d --build
+```
+
+To stop and remove the containers:
+
+```bash
+docker compose down
+```
+
+> **No `docker-compose.yml` yet?** If you're building the images individually rather than via Compose, you can instead do:
+> ```bash
+> docker build -t rescuenet-backend .
+> docker run -p 8080:8080 --env-file .env rescuenet-backend
+> ```
+> (repeat with the frontend directory/Dockerfile, mapping port `3000:3000`)
+
+### Option 2: Run manually (without Docker)
+
+#### Prerequisites
 
 - Go 1.21+
 - PostgreSQL 14+
 - sqlc (`go install github.com/sqlc-dev/sqlc/cmd/sqlc@latest`)
 
-### Setup
+#### Setup
 
 ```bash
 # 1. Clone
@@ -208,6 +262,8 @@ JWT_SECRET=your_secret_key_here
 ALLOWED_ORIGIN=http://localhost:5173
 ```
 
+> When running via Docker Compose with a containerized Postgres, replace `localhost` in `DB_URL` with the Postgres service name from your `docker-compose.yml` (commonly `db`).
+
 ---
 
 ## Project structure
@@ -237,6 +293,8 @@ RescueNet/
 │   └── database/                    # sqlc-generated type-safe DB queries
 ├── sql/                             # SQL migration files and sqlc query definitions
 ├── sqlc.yaml                        # sqlc configuration
+├── Dockerfile                       # Backend container image
+├── docker-compose.yml               # Multi-container setup (backend + frontend [+ db])
 └── go.mod
 ```
 
@@ -269,6 +327,8 @@ Authentication for WebSocket connections happens via `?token=<jwt>` query parame
 
 **Why Haversine in Go instead of PostGIS?** Keeps the DB dependency minimal. At the scale of 1 km radius lookups the full table scan with Go-side filtering is fast enough. Can be replaced with a PostGIS `ST_DWithin` index if scale demands it.
 
+**Why Docker?** Packages the Go backend, frontend, and their runtime dependencies into isolated, reproducible containers — so anyone can spin up the full stack with a single `docker compose up`, without installing Go, Node, or Postgres locally.
+
 ---
 
 ## Author
@@ -278,5 +338,4 @@ B.Tech — Electronics and Communication Engineering
 National Institute of Technology Agartala | GPA: 8.72
 
 - Email: rc5091119@gmail.com
-
 - GitHub: [github.com/rc5091119-pixel](https://github.com/rc5091119-pixel)
