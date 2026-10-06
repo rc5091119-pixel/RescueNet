@@ -330,12 +330,3 @@ Authentication for WebSocket connections happens via `?token=<jwt>` query parame
 **Why Docker?** Packages the Go backend, frontend, and their runtime dependencies into isolated, reproducible containers — so anyone can spin up the full stack with a single `docker compose up`, without installing Go, Node, or Postgres locally.
 
 ---
-
-## Author
-
-**Ravindra Choudhary**
-B.Tech — Electronics and Communication Engineering
-National Institute of Technology Agartala | GPA: 8.72
-
-- Email: rc5091119@gmail.com
-- GitHub: [github.com/rc5091119-pixel](https://github.com/rc5091119-pixel)
